@@ -1,0 +1,120 @@
+# Setup
+
+PUT /backtests-ranges-000001
+
+PUT backtests-ranges-000001/_mapping
+{
+  "properties": {
+    "ticker": {
+      "type": "keyword"
+    },
+    "position": {
+      "type": "keyword"
+    },
+    "range_high": {
+      "type": "double"
+    },
+    "range_low": {
+      "type": "double"
+    },
+    "timestamp_high": {
+      "type": "date"
+    },
+    "timestamp_low": {
+      "type": "date"
+    },
+    "num_ticks": {
+      "type": "long"
+    },
+    "timestamp": {
+      "type": "date"
+    }
+  },
+  "runtime": {
+    "range_duration": {
+      "type": "long",
+      "script": {
+        "source": """
+          String position = doc['position'].value;
+          Instant timestamp_high = doc['timestamp_high'].value.toInstant();
+          Instant timestamp_low = doc['timestamp_low'].value.toInstant();
+          Duration duration;
+          
+          if (position.equals("long")) {
+            duration = Duration.between(timestamp_low, timestamp_high);
+          } else {
+            duration = Duration.between(timestamp_high, timestamp_low);
+          }
+          
+          long duration_minutes = (long) Math.abs(duration.toMinutes());
+          emit(duration_minutes);
+        """
+      }
+    },
+    "hour_of_day": {
+      "type": "long",
+      "script": {
+        "source": "emit(doc['timestamp'].value.toInstant().atZone(ZoneId.of('Australia/Brisbane')).hour);"
+      }
+    }
+  }
+}
+
+
+# Sample Create
+POST backtests-ranges-000001/_doc
+{
+  "timestamp": "2023-05-01T12:34:56+10:00",
+  "position": "long",
+  "timestamp_high": "2023-05-01T12:40:00+10:00",
+  "timestamp_low": "2023-05-01T12:35:00+10:00",
+  "range_high": 1800,
+  "range_low": 1750,
+  "num_ticks": 5000,
+  "range_duration": 5
+}
+
+
+GET /backtests-ranges-000001/_doc/<event_id>
+
+POST /backtests-ranges-000001/_update/<event_id>
+{
+  "doc": {
+    "num_ticks": 150
+  }
+}
+
+DELETE /backtests-ranges-000001/_doc/<event_id>
+
+
+
+
+Create a new elasticsearch index called `backtests-strategies-000001`and mappings with fields that track the 
+PUT backtests-strategies-000001
+{
+  "mappings": {
+    "properties": {
+      "ticker": {
+        "type": "keyword"
+      },
+      "num_ticks": {
+        "type": "integer"
+      },
+      "position": {
+        "type": "keyword"
+      },
+      "riskreward": {
+        "type": "float"
+      },
+      "win": {
+        "type": "boolean"
+      },
+      "timestamp": {
+        "type": "date"
+      },
+      "model_name": {
+        "type": "keyword"
+      }
+    }
+  }
+}

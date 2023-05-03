@@ -1,0 +1,12 @@
+# dependencies
+elasticsearch-react-app/node_modules/
+server/node_modules/
+# misc
+elasticsearch-react-app/.DS_Store
+elasticsearch-react-app/.env
+
+/server/.env
+/server/.DS_Store
+
+# setup
+dataGenerator.py
